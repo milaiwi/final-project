@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "353510067975",
+    "project_id": "final-bf277",
+    "storage_bucket": "final-bf277.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:353510067975:android:c41d2f32460b2f43b0ffa2",
+        "android_client_info": {
+          "package_name": "edu.cs371m.fcgooglemaps"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAfUvMfPT4mCFEx84st7lGhbgUF3zdalf8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
