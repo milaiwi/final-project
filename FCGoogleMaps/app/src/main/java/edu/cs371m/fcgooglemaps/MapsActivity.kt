@@ -2,6 +2,7 @@ package edu.cs371m.fcgooglemaps
 
 import FirestoreHelper
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.Address
@@ -13,6 +14,7 @@ import android.view.Menu
 import android.view.MenuItem
 import android.widget.Button
 import android.widget.EditText
+import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
@@ -51,6 +53,14 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         return when (item.itemId) {
             R.id.action_sign_out -> {
                 signOut()
+                true
+            }
+            R.id.action_profile -> {
+                startActivity(Intent(this, ProfileActivity::class.java))
+                true
+            }
+            R.id.action_find -> {
+                startActivity(Intent(this, FindActivity::class.java))
                 true
             }
             else -> super.onOptionsItemSelected(item)
@@ -92,6 +102,21 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         }
     }
 
+    private fun moveCameraToLocation(locationName: String, latLng: LatLng) {
+        map.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15.0f))
+    }
+
+    private fun handleMapSetup() {
+        // Check if the activity was started with location details
+        val locationName = intent.getStringExtra("locationName")
+        val latitude = intent.getDoubleExtra("latitude", 0.0)
+        val longitude = intent.getDoubleExtra("longitude", 0.0)
+        Log.d("MapsActivity", "Location: $locationName")
+        if (locationName != null && latitude != 0.0 && longitude != 0.0) {
+            moveCameraToLocation(locationName, LatLng(latitude, longitude))
+        }
+    }
+
     private fun handleAddressSearch(locationName: String) {
         Log.d("Geocoding", locationName)
         MainScope().launch {
@@ -125,23 +150,29 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         map.setOnPoiClickListener { poi ->
             // Use firestoreHelper to fetch comments
             Log.d("MapsActivity", "Fetching comments")
-
+            val lat = poi.latLng.latitude
+            val long = poi.latLng.longitude
+            val name = poi.name
             firestoreHelper.fetchCommentsFromFirestore(
                 placeId = poi.placeId,
                 successCallback = { comments ->
                     runOnUiThread {
-                        showCommentsPopup(poi.placeId, comments.toMutableList())
+                        showCommentsPopup(poi.placeId, comments.toMutableList(), lat, long, name)
                     }
                 },
                 failureCallback = { exception ->
                     runOnUiThread {
-                        showCommentsPopup(poi.placeId, mutableListOf())
+                        showCommentsPopup(poi.placeId, mutableListOf(), lat, long, name)
                         Log.e("MapsActivity", "Error fetching comments", exception)
                     }
                 }
             )
         }
+
+        handleMapSetup();
     }
+
+
 
     private fun enableMyLocation() {
         if (ActivityCompat.checkSelfPermission(
@@ -173,14 +204,16 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         map.addMarker(markerOptions)
     }
 
-    private fun showCommentsPopup(placeId: String, comments: MutableList<FirestoreHelper.Comment>) {
+    @SuppressLint("SetTextI18n")
+    private fun showCommentsPopup(placeId: String, comments: MutableList<FirestoreHelper.Comment>,
+                                  latitude: Double, longitude: Double, name: String) {
         val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_comments, null)
         val totalScoreText = dialogView.findViewById<TextView>(R.id.totalScore)
         val commentsRecyclerView = dialogView.findViewById<RecyclerView>(R.id.commentsRecyclerView)
         val commentEditText = dialogView.findViewById<EditText>(R.id.commentEditText)
         val commentEditScore = dialogView.findViewById<EditText>(R.id.commentEditScore)
         val submitButton = dialogView.findViewById<Button>(R.id.submitCommentButton)
-
+        val favoriteLocation = dialogView.findViewById<ImageView>(R.id.actionFavorite)
 
         val adapter = CommentsAdapter(comments)
         commentsRecyclerView.adapter = adapter
@@ -192,7 +225,41 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         }
 
         val totalScore = (firestoreHelper.calculateTotalScore(comments) / comments.size)
-        totalScoreText.text = "Total Score: ${totalScore}"
+        totalScoreText.text = "Total Score: ${String.format("%.2f", totalScore)}"
+
+        firestoreHelper.fetchCurrentUser(
+            onSuccess = { user ->
+                Log.d("Favorites", "Current List: ${user.favorites}")
+                var locationExists = user.favorites.any { it["id"] == placeId }
+                if (locationExists) {
+                    favoriteLocation.setImageResource(R.drawable.ic_favorite_black_24dp)
+                } else {
+                    favoriteLocation.setImageResource(R.drawable.ic_favorite_border_black)
+                }
+
+                favoriteLocation.setOnClickListener {
+                    locationExists = user.favorites.any { it["id"] == placeId }
+                    Log.d("Favorites", "Current List: ${user.favorites}")
+
+                    if (!locationExists) {
+                        // add to favorites
+                        Log.d("Favorites", "Adding to map")
+                        favoriteLocation.setImageResource(R.drawable.ic_favorite_black_24dp)
+                        firestoreHelper.addToFavorites(user, placeId, latitude, longitude, name)
+                    } else {
+                        // remove from favorites
+                        Log.d("Favorites", "Removing from map")
+                        favoriteLocation.setImageResource(R.drawable.ic_favorite_border_black)
+                        val updatedFavorites = user.favorites.filter { it["id"] != placeId }
+                        firestoreHelper.removeFromFavorites(user, updatedFavorites)
+                    }
+                }
+            },
+            onFailure = { exception ->
+                Log.d("FindActivity", "Error fetching user: ${exception.message}")
+            }
+        )
+
 
         val alertDialog = AlertDialog.Builder(this)
             .setView(dialogView)

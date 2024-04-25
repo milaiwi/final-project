@@ -13,7 +13,13 @@ class SignupActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivitySignupBinding
     private lateinit var firebaseAuth: FirebaseAuth
-    data class UserProfile(val name: String, val email: String)
+    data class UserProfile(
+        val uid: String = "",
+        val name: String = "",
+        val email: String = "",
+        val followers: List<String> = emptyList(),
+        val favorites: List<String> = emptyList()
+    )
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -41,16 +47,18 @@ class SignupActivity : AppCompatActivity() {
     }
 
     fun registerUser(email: String, password: String, name: String) {
+        Log.d("Signup", "Registering account $name")
         FirebaseAuth.getInstance().createUserWithEmailAndPassword(email, password)
             .addOnCompleteListener { task ->
                 if (task.isSuccessful) {
+                    Log.d("Signup", "Task was successful!")
                     // User is successfully registered and logged in
                     // Now store additional details in Firestore
                     val user = FirebaseAuth.getInstance().currentUser
-                    val userProfile = UserProfile(name, email)
+                    val userProfile = UserProfile(user!!.uid, name, email, emptyList(), emptyList())
 
                     FirebaseFirestore.getInstance().collection("users")
-                        .document(user!!.uid)
+                        .document(user.uid)
                         .set(userProfile)
                         .addOnSuccessListener {
                             Log.d("RegisterActivity", "User profile saved in Firestore")
