@@ -38,7 +38,8 @@ class FindActivity : AppCompatActivity() {
                 Log.d("FindActivity", "User list retrieved: $userList")
                 firestoreHelper.fetchCurrentUser(
                     onSuccess = { user ->
-                        usersAdapter = UsersAdapter(userList, user) { selectedUser ->
+                        val filteredUserList = userList?.filterNot { it["uid"] == user.uid }
+                        usersAdapter = UsersAdapter(filteredUserList, user) { selectedUser ->
                             Log.d("FindActivity", "Following user: $selectedUser")
                         }
                         recyclerView.adapter = usersAdapter

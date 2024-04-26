@@ -3,6 +3,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
+import edu.cs371m.fcgooglemaps.FavoritesAdapter
 
 class FirestoreHelper {
 
@@ -22,7 +23,7 @@ class FirestoreHelper {
         val uid: String = ""
     )
 
-    private val db = FirebaseFirestore.getInstance()
+    val db = FirebaseFirestore.getInstance()
 
     fun submitCommentToFirestore(placeId: String, commentText: String, commentScore: Double, onSuccess: () -> Unit) {
         val userId = FirebaseAuth.getInstance().currentUser?.uid
@@ -192,6 +193,8 @@ class FirestoreHelper {
                 Log.e("FirestoreHelper", "Error adding location to favorites", e)
             }
     }
+
+
 
     fun removeFromFavorites(currentUser: User, updatedFavorites: List<Map<String, Any>>) {
         val userRef = db.collection("users").document(currentUser.uid)

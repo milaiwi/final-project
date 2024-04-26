@@ -4,7 +4,6 @@
     android:orientation="vertical"
     android:padding="16dp">
 
-    <!-- Nested LinearLayout for the back button and title -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -19,20 +18,27 @@
             android:text="←"
             android:layout_marginEnd="8dp"/>
 
-        <!-- Title -->
         <TextView
-            android:layout_width="wrap_content"
+            android:id="@+id/titleTextView"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="For You:"
+            android:layout_weight="1"
+            android:text="For You"
             android:textSize="24sp"
             android:textStyle="bold"
-            />
+            android:gravity="start"
+            android:textColor="#000" />
     </LinearLayout>
 
-    <!-- RecyclerView to display list of accounts -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@android:color/darker_gray"
+        android:layout_marginVertical="8dp"/>
+
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerViewFind"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
-
+        android:layout_height="0dp"
+        android:layout_weight="1"/>
 </LinearLayout>

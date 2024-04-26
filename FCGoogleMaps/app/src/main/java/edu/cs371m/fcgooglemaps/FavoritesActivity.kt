@@ -1,5 +1,6 @@
 package edu.cs371m.fcgooglemaps
 
+import FirestoreHelper
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
@@ -14,6 +15,7 @@ class FavoritesActivity : AppCompatActivity() {
     private lateinit var titleTextView: TextView
     private lateinit var favoritesRecyclerView: RecyclerView
     private lateinit var favoritesAdapter: FavoritesAdapter
+    private val firestoreHelper = FirestoreHelper()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -30,18 +32,31 @@ class FavoritesActivity : AppCompatActivity() {
         favoritesRecyclerView = findViewById(R.id.favoritesRecyclerView)
         favoritesRecyclerView.layoutManager = LinearLayoutManager(this)
 
-        // Retrieve data from intent
-        val userName = intent.getStringExtra("userName") ?: "User"
-//        val favoriteLocations = intent.getStringArrayListExtra("favorites") ?: ArrayList()
-        val favoriteLocations = intent.getSerializableExtra("favorites") as? List<*>
-        val typedFavoriteLocations = favoriteLocations?.filterIsInstance<Map<String, Any>>() ?: emptyList()
         // Set title
+        val userName = intent.getStringExtra("userName") ?: "User"
+        val uid      = intent.getStringExtra("uid") ?: ""
         titleTextView.text = "$userName Favorites"
 
-        Log.d("FavoritesActivity", "Locations: $favoriteLocations")
+        // Fetch favorites from Firestore
+        fetchFavoritesFromFirestore(uid)
+    }
 
-        // Initialize RecyclerView and adapter
-        favoritesAdapter = FavoritesAdapter(this@FavoritesActivity, typedFavoriteLocations as List<Map<String, Any>>)
-        favoritesRecyclerView.adapter = favoritesAdapter
+
+    fun fetchFavoritesFromFirestore(uid: String) {
+        firestoreHelper.db.collection("users").document(uid)
+            .get()
+            .addOnSuccessListener { document ->
+                if (document.exists()) {
+                    val favorites = document.get("favorites") as? List<Map<String, Any>> ?: emptyList()
+                    // Initialize RecyclerView and adapter with fetched favorites
+                    favoritesAdapter = FavoritesAdapter(this@FavoritesActivity, favorites)
+                    favoritesRecyclerView.adapter = favoritesAdapter
+                } else {
+                    Log.d("FavoritesActivity", "No such document")
+                }
+            }
+            .addOnFailureListener { e ->
+                Log.e("FavoritesActivity", "Error fetching favorites", e)
+            }
     }
 }

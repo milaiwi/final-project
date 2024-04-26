@@ -35,7 +35,7 @@ class ProfileAdapter(
             holder.followButton.setOnClickListener {
                 val intent = Intent(context, FavoritesActivity::class.java).apply {
                     putExtra("userName", userName)
-
+                    putExtra("uid", uid)
                     // Put the entire favorites array as a serializable extra
                     putExtra("favorites", favorites as Serializable)
                 }

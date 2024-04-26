@@ -103,7 +103,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     }
 
     private fun moveCameraToLocation(locationName: String, latLng: LatLng) {
-        map.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15.0f))
+        map.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 20.0f))
     }
 
     private fun handleMapSetup() {
@@ -146,6 +146,11 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         if (locationPermissionGranted) {
             enableMyLocation()
         }
+
+        map.mapType = GoogleMap.MAP_TYPE_HYBRID
+
+        val austin = LatLng(30.2672, -97.7431)
+        map.moveCamera(CameraUpdateFactory.newLatLngZoom(austin, 10f))
 
         map.setOnPoiClickListener { poi ->
             // Use firestoreHelper to fetch comments
